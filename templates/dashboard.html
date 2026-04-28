@@ -177,6 +177,15 @@
   </div>
 
 </div>
+<!-- Info Modal (shared for all charts) -->
+<div id="infoModal" style="display:none;position:fixed;inset:0;background:rgba(11,27,43,0.55);z-index:200;overflow-y:auto;padding:40px 16px;">
+  <div style="background:var(--paper);border-radius:8px;max-width:480px;margin:0 auto;padding:32px;position:relative;">
+    <button id="infoModalClose" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);">✕</button>
+    <h3 id="infoModalTitle" class="display" style="font-size:20px;line-height:1.3;margin-bottom:20px;padding-right:24px;"></h3>
+    <div id="infoModalBody"></div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_scripts %}
@@ -195,7 +204,21 @@
         labels: Object.keys(rd),
         datasets: [{ data: Object.values(rd), backgroundColor: COLORS[0], borderRadius: 4 }]
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        onClick: (evt, elements) => {
+          if (!elements.length) return;
+          const i = elements[0].index;
+          const rating = Object.keys(rd)[i];
+          const jumlah = Object.values(rd)[i];
+          showInfoModal(
+            `Rating ${rating}`,
+            `<p style="font-size:15px;margin-bottom:16px;"><strong>${jumlah} produk</strong> memiliki rating <strong>${rating}</strong>.</p>
+             <p style="color:var(--muted);font-size:13px;">Rating ${rating} ${rating == '5.0' ? 'menunjukkan kepuasan konsumen sempurna.' : rating == '4.9' ? 'adalah rating terbanyak — mayoritas produk Crocs mendapat penilaian sangat tinggi.' : 'menunjukkan kepuasan konsumen yang tinggi.'}</p>`
+          );
+        }
+      }
     });
 
     // Category proportion
@@ -206,7 +229,27 @@
         labels: cats.map(c => c.kategori),
         datasets: [{ data: cats.map(c => c.jumlah_produk), backgroundColor: COLORS, borderWidth: 2, borderColor: '#FBF7F0' }]
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } } }
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } },
+        onClick: (evt, elements) => {
+          if (!elements.length) return;
+          const i = elements[0].index;
+          const cat = cats[i];
+          showInfoModal(
+            `Kategori: ${cat.kategori}`,
+            `<table class="tbl" style="border:0;">
+              <tbody>
+                <tr><td style="color:var(--muted);">Jumlah Produk</td><td><strong>${cat.jumlah_produk} SKU</strong></td></tr>
+                <tr><td style="color:var(--muted);">Rata-rata Harga</td><td><strong>Rp${Math.round(cat.rata_harga).toLocaleString('id-ID')}</strong></td></tr>
+                <tr><td style="color:var(--muted);">Rata-rata Rating</td><td><strong>${cat.rata_rating.toFixed(2)} / 5.0</strong></td></tr>
+                <tr><td style="color:var(--muted);">Total Terjual</td><td><strong>${cat.total_terjual.toLocaleString('id-ID')} unit</strong></td></tr>
+                <tr><td style="color:var(--muted);">Rata-rata Terjual</td><td><strong>${Math.round(cat.rata_terjual).toLocaleString('id-ID')} unit/produk</strong></td></tr>
+              </tbody>
+            </table>`
+          );
+        }
+      }
     });
 
     // Avg sold per category
@@ -216,8 +259,28 @@
         labels: cats.map(c => c.kategori),
         datasets: [{ data: cats.map(c => c.rata_terjual), backgroundColor: COLORS[1], borderRadius: 4 }]
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-                 scales: { y: { beginAtZero: true } } }
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } },
+        onClick: (evt, elements) => {
+          if (!elements.length) return;
+          const i = elements[0].index;
+          const cat = cats[i];
+          showInfoModal(
+            `Rata-rata Terjual: ${cat.kategori}`,
+            `<table class="tbl" style="border:0;">
+              <tbody>
+                <tr><td style="color:var(--muted);">Kategori</td><td><strong>${cat.kategori}</strong></td></tr>
+                <tr><td style="color:var(--muted);">Rata-rata Terjual</td><td><strong>${Math.round(cat.rata_terjual).toLocaleString('id-ID')} unit/produk</strong></td></tr>
+                <tr><td style="color:var(--muted);">Total Terjual</td><td><strong>${cat.total_terjual.toLocaleString('id-ID')} unit</strong></td></tr>
+                <tr><td style="color:var(--muted);">Jumlah Produk</td><td><strong>${cat.jumlah_produk} SKU</strong></td></tr>
+                <tr><td style="color:var(--muted);">Rata-rata Harga</td><td><strong>Rp${Math.round(cat.rata_harga).toLocaleString('id-ID')}</strong></td></tr>
+              </tbody>
+            </table>`
+          );
+        }
+      }
     });
   });
 
@@ -284,9 +347,44 @@
         indexAxis: 'y',
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true } }
+        scales: { x: { beginAtZero: true } },
+        onClick: (evt, elements) => {
+          if (!elements.length) return;
+          const p = sorted[elements[0].index];
+          const clusterColor = p.cluster_label === 'Bestseller' ? '#B14406' : p.cluster_label === 'Premium' ? '#1B4965' : '#0A5C5B';
+          const clusterBg    = p.cluster_label === 'Bestseller' ? '#FFE7D6' : p.cluster_label === 'Premium' ? '#DCE6EF'  : '#D6ECEC';
+          showInfoModal(
+            p.nama_produk,
+            `<span class="badge" style="background:${clusterBg};color:${clusterColor};border-color:${clusterColor}40;margin-bottom:16px;display:inline-block;">Cluster · ${p.cluster_label}</span>
+             <table class="tbl" style="border:0;">
+               <tbody>
+                 <tr><td style="color:var(--muted);">Kategori</td><td><strong>${p.kategori}</strong></td></tr>
+                 <tr><td style="color:var(--muted);">Harga</td><td><strong>Rp${p.harga.toLocaleString('id-ID')}</strong></td></tr>
+                 <tr><td style="color:var(--muted);">Diskon</td><td>${p.diskon_pct > 0 ? `<strong>${p.diskon_pct}%</strong> → Rp${p.harga_diskon.toLocaleString('id-ID')}` : '-'}</td></tr>
+                 <tr><td style="color:var(--muted);">Rating</td><td><strong>${p.rating} / 5.0</strong></td></tr>
+                 <tr><td style="color:var(--muted);">Terjual</td><td><strong>${p.terjual.toLocaleString('id-ID')} unit</strong></td></tr>
+                 <tr><td style="color:var(--muted);">Promo</td><td>${p.ada_promo ? '<span style="color:#0A5C5B;font-weight:600;">Ada promo aktif</span>' : 'Tidak ada promo'}</td></tr>
+               </tbody>
+             </table>`
+          );
+        }
       }
     });
+  });
+
+  // Shared info modal
+  function showInfoModal(title, bodyHtml) {
+    document.getElementById('infoModalTitle').textContent = title;
+    document.getElementById('infoModalBody').innerHTML = bodyHtml;
+    document.getElementById('infoModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+  document.getElementById('infoModal').addEventListener('click', function(e) {
+    if (e.target === this) { this.style.display = 'none'; document.body.style.overflow = ''; }
+  });
+  document.getElementById('infoModalClose').addEventListener('click', () => {
+    document.getElementById('infoModal').style.display = 'none';
+    document.body.style.overflow = '';
   });
 </script>
 {% endblock %}
