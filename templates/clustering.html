@@ -63,17 +63,18 @@
         <span class="card-sub">2 ≤ K ≤ 7</span>
       </div>
       <div class="tbl-wrap" style="border:0;">
-        <table class="tbl">
+        <table class="tbl" id="evalTable">
           <thead>
             <tr><th class="num">K</th><th class="num">Inertia</th><th class="num">Silhouette</th><th>Catatan</th></tr>
           </thead>
           <tbody>
             {% for i in range(r.kmeans.K_range|length) %}
-            <tr {% if r.kmeans.K_range[i] == 3 %}style="background: #FFE7D6;"{% endif %}>
+            <tr id="eval-row-{{ r.kmeans.K_range[i] }}" data-k="{{ r.kmeans.K_range[i] }}"
+                {% if r.kmeans.K_range[i] == 3 %}style="background: #FFE7D6;"{% endif %}>
               <td class="num"><strong>{{ r.kmeans.K_range[i] }}</strong></td>
               <td class="num">{{ "%.4f"|format(r.kmeans.inertia[i]) }}</td>
               <td class="num">{{ "%.4f"|format(r.kmeans.silhouette[i]) }}</td>
-              <td>{{ '✓ Optimal' if r.kmeans.K_range[i] == 3 else '' }}</td>
+              <td id="eval-note-{{ r.kmeans.K_range[i] }}">{{ '✓ Optimal' if r.kmeans.K_range[i] == 3 else '' }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -203,6 +204,42 @@
   Chart.defaults.font.family = "'Manrope', sans-serif";
   Chart.defaults.color = '#2A3D4F';
 
+  let activeK = null;
+
+  function highlightRow(k) {
+    // Reset semua baris
+    document.querySelectorAll('#evalTable tbody tr').forEach(row => {
+      const rowK = parseInt(row.dataset.k);
+      row.style.background = rowK === 3 ? '#FFE7D6' : '';
+      row.style.color = '';
+      row.style.opacity = '1';
+      row.style.filter = '';
+      const noteCell = row.querySelector('td:last-child');
+      if (rowK === 3) noteCell.innerHTML = '✓ Optimal';
+      else noteCell.innerHTML = '';
+    });
+
+    if (k === null || k === activeK) {
+      activeK = null;
+      return;
+    }
+
+    activeK = k;
+
+    document.querySelectorAll('#evalTable tbody tr').forEach(row => {
+      const rowK = parseInt(row.dataset.k);
+      if (rowK === k) {
+        row.style.background = '#0B1B2B';
+        row.style.color = '#F5EFE6';
+        const noteCell = row.querySelector('td:last-child');
+        noteCell.innerHTML = rowK === 3 ? '✓ Optimal · <span style="color:#F26A1F">dipilih</span>' : '← dipilih';
+      } else if (rowK !== 3) {
+        row.style.opacity = '0.35';
+        row.style.filter = 'grayscale(0.5)';
+      }
+    });
+  }
+
   fetch('/api/kmeans').then(r => r.json()).then(km => {
     new Chart(document.getElementById('elbowChart'), {
       type: 'line',
@@ -223,7 +260,21 @@
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'top' } },
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              title: ctx => `K = ${ctx[0].label}`,
+              afterBody: ctx => ctx[0].label == 3 ? ['✓ K Optimal yang digunakan'] : []
+            }
+          }
+        },
+        onClick: (evt, elements) => {
+          if (elements.length > 0) {
+            const k = km.K_range[elements[0].index];
+            highlightRow(k);
+          }
+        },
         scales: {
           x: { title: { display: true, text: 'K (Jumlah Cluster)' } },
           y: { type: 'linear', position: 'left', title: { display: true, text: 'Inertia' } },
