@@ -197,6 +197,10 @@
   </div>
 
 </div>
+
+<!-- Scatter Product Modal -->
+<div id="scatterModal" style="display:none;position:fixed;inset:0;background:rgba(11,27,43,0.55);z-index:200;overflow-y:auto;padding:20px;"></div>
+
 {% endblock %}
 
 {% block extra_scripts %}
@@ -286,15 +290,19 @@
 
   fetch('/api/products').then(r => r.json()).then(products => {
     const colorMap = { 'Bestseller': '#F26A1F', 'Premium': '#1B4965', 'Regular': '#0E7C7B' };
+    const bgMap    = { 'Bestseller': '#FFE7D6', 'Premium': '#DCE6EF',  'Regular': '#D6ECEC' };
     const datasets = ['Bestseller', 'Premium', 'Regular'].map(label => ({
       label, backgroundColor: colorMap[label], borderColor: '#fff', borderWidth: 1,
       pointRadius: 8, pointHoverRadius: 12,
       data: products.filter(p => p.cluster_label === label).map(p => ({
-        x: p.harga, y: p.terjual, name: p.nama_produk, rating: p.rating
+        x: p.harga, y: p.terjual, name: p.nama_produk, rating: p.rating,
+        diskon: p.diskon_pct, harga_diskon: p.harga_diskon, kategori: p.kategori,
+        warna: p.warna, ada_promo: p.ada_promo, cluster_label: p.cluster_label,
+        url_gambar: p.url_gambar
       }))
     }));
 
-    new Chart(document.getElementById('scatterChart'), {
+    const chart = new Chart(document.getElementById('scatterChart'), {
       type: 'scatter',
       data: { datasets },
       options: {
@@ -316,6 +324,13 @@
             }
           }
         },
+        onClick: (evt, elements) => {
+          if (elements.length === 0) return;
+          const el = elements[0];
+          const d = chart.data.datasets[el.datasetIndex].data[el.index];
+          const label = chart.data.datasets[el.datasetIndex].label;
+          showProductModal(d, label, colorMap[label], bgMap[label]);
+        },
         scales: {
           x: {
             title: { display: true, text: 'Harga (Rp)' },
@@ -325,6 +340,42 @@
         }
       }
     });
+  });
+
+  function showProductModal(d, label, color, bg) {
+    const diskonText = d.diskon > 0
+      ? `<span style="color:#B14406;font-weight:600;">${d.diskon}% off</span> → Rp${d.harga_diskon.toLocaleString('id-ID')}`
+      : '<span style="color:var(--muted);">Tidak ada diskon</span>';
+
+    document.getElementById('scatterModal').innerHTML = `
+      <div style="background:var(--paper);border-radius:8px;max-width:520px;margin:60px auto;padding:32px;position:relative;">
+        <button onclick="document.getElementById('scatterModal').style.display='none';document.body.style.overflow='';"
+          style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);">✕</button>
+
+        <span class="badge" style="background:${bg};color:${color};border-color:${color}40;margin-bottom:12px;display:inline-block;">
+          Cluster · ${label}
+        </span>
+
+        <h3 class="display" style="font-size:19px;line-height:1.3;margin-bottom:20px;">${d.name}</h3>
+
+        <table class="tbl" style="border:0;">
+          <tbody>
+            <tr><td style="color:var(--muted);width:130px;">Kategori</td><td><strong>${d.kategori}</strong></td></tr>
+            <tr><td style="color:var(--muted);">Warna</td><td>${d.warna}</td></tr>
+            <tr><td style="color:var(--muted);">Harga</td><td><strong>Rp${d.x.toLocaleString('id-ID')}</strong></td></tr>
+            <tr><td style="color:var(--muted);">Diskon</td><td>${diskonText}</td></tr>
+            <tr><td style="color:var(--muted);">Rating</td><td><strong>${d.rating} / 5.0</strong></td></tr>
+            <tr><td style="color:var(--muted);">Terjual</td><td><strong>${d.y.toLocaleString('id-ID')} unit</strong></td></tr>
+            <tr><td style="color:var(--muted);">Promo</td><td>${d.ada_promo ? '<span style="color:#0A5C5B;font-weight:600;">Ada promo aktif</span>' : 'Tidak ada promo'}</td></tr>
+          </tbody>
+        </table>
+      </div>`;
+    document.getElementById('scatterModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+
+  document.getElementById('scatterModal').addEventListener('click', function(e) {
+    if (e.target === this) { this.style.display = 'none'; document.body.style.overflow = ''; }
   });
 </script>
 {% endblock %}
