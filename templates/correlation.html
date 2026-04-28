@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Korelasi Pearson{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <div class="eyebrow">Tahap 5 &middot; Pearson Correlation Analysis</div>
+  <h1>Mengukur kekuatan dan signifikansi <em>hubungan linear</em> antar variabel.</h1>
+  <p class="lede">
+    Koefisien korelasi Pearson (r) berkisar -1 sampai 1: r mendekati 1 berarti korelasi
+    positif kuat, mendekati -1 negatif kuat, dan mendekati 0 tidak ada hubungan linear.
+    P-value &lt; 0.05 dianggap signifikan secara statistik.
+  </p>
+</section>
+
+<div class="container">
+
+  <!-- Heatmap -->
+  <div class="section-head">
+    <div>
+      <h2>Heatmap Korelasi</h2>
+      <p>Matriks korelasi 4 variabel numerik utama.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Matriks Korelasi</div>
+        <span class="card-sub">range -1.0 sampai 1.0</span>
+      </div>
+      <div class="tbl-wrap" style="border:0;">
+        <table class="tbl" id="corrTable">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="num">Harga</th>
+              <th class="num">Diskon%</th>
+              <th class="num">Rating</th>
+              <th class="num">Terjual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set vars = ['harga','diskon_pct','rating','terjual'] %}
+            {% set lab  = {'harga':'Harga','diskon_pct':'Diskon%','rating':'Rating','terjual':'Terjual'} %}
+            {% for row in vars %}
+            <tr>
+              <td><strong>{{ lab[row] }}</strong></td>
+              {% for col in vars %}
+              {% set v = r.corr.matrix[col][row] %}
+              <td class="num" style="background: {{ 'rgba(14,124,123,' ~ ((v|abs)*0.5 + 0.05) ~ ')' if v >= 0 else 'rgba(230,57,70,' ~ ((v|abs)*0.5 + 0.05) ~ ')' }};">
+                <strong>{{ "%.3f"|format(v) }}</strong>
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Skala Interpretasi r</div>
+        <span class="card-sub">panduan kekuatan korelasi</span>
+      </div>
+      <div class="tbl-wrap" style="border:0;">
+        <table class="tbl">
+          <thead><tr><th>|r|</th><th>Interpretasi</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">0.00 – 0.19</td><td>Sangat lemah / tidak ada</td></tr>
+            <tr><td class="mono">0.20 – 0.39</td><td>Lemah</td></tr>
+            <tr><td class="mono">0.40 – 0.59</td><td>Sedang</td></tr>
+            <tr><td class="mono">0.60 – 0.79</td><td>Kuat</td></tr>
+            <tr><td class="mono">0.80 – 1.00</td><td>Sangat kuat</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top: 18px; padding: 14px; background: var(--cream); border-left: 3px solid var(--orange); font-size: 13px;">
+        <strong>p-value</strong> &lt; 0.05 → korelasi signifikan secara statistik;
+        <strong>p-value</strong> ≥ 0.05 → tidak signifikan (bisa terjadi karena chance).
+      </div>
+    </div>
+  </div>
+
+  <!-- Pair Analysis -->
+  <div class="section-head">
+    <div>
+      <h2>Analisis Pasangan Variabel</h2>
+      <p>Pengujian korelasi Pearson untuk pasangan variabel paling relevan untuk e-commerce.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    {% for pair in r.corr.pairs %}
+    {% set abs_r = pair.r if pair.r >= 0 else -pair.r %}
+    <div class="card anim">
+      <div class="card-head">
+        <div>
+          <div class="card-sub mono">{{ pair.var_a }} ↔ {{ pair.var_b }}</div>
+          <div class="card-title">
+            r = {{ pair.r }}
+          </div>
+        </div>
+        {% if pair.p_value < 0.05 %}
+          <span class="badge t-orange">Signifikan</span>
+        {% else %}
+          <span class="badge">Tidak Signifikan</span>
+        {% endif %}
+      </div>
+      <p style="font-size: 14px; color: var(--ink-soft); margin-bottom: 16px;">{{ pair.interpretasi }}</p>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
+        <div>
+          <div style="color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px; font-weight: 600;">Koefisien r</div>
+          <div class="mono" style="font-size: 18px; margin-top: 4px;">{{ pair.r }}</div>
+        </div>
+        <div>
+          <div style="color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px; font-weight: 600;">P-value</div>
+          <div class="mono" style="font-size: 18px; margin-top: 4px;">{{ pair.p_value }}</div>
+        </div>
+      </div>
+      <!-- Visual bar -->
+      <div style="margin-top: 18px; height: 8px; background: var(--cream-2); border-radius: 4px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--muted);"></div>
+        <div style="position: absolute; top: 0; bottom: 0;
+                    {% if pair.r >= 0 %}
+                      left: 50%; width: {{ (abs_r*50)|round(1) }}%; background: var(--teal);
+                    {% else %}
+                      right: 50%; width: {{ (abs_r*50)|round(1) }}%; background: var(--warn);
+                    {% endif %}
+                    "></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 6px;">
+        <span>-1.0</span><span>0</span><span>+1.0</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Insight -->
+  <div class="section-head">
+    <div>
+      <h2>Insight Kunci</h2>
+      <p>Apa yang diberitahukan oleh data tentang perilaku konsumen Crocs di Shopee.</p>
+    </div>
+  </div>
+
+  <div class="card anim">
+    <div class="quote-block">
+      "Harga produk hampir tidak menentukan volume penjualan. Yang menentukan adalah daya tarik brand, model klasik, dan rating konsisten di atas 4.8."
+    </div>
+
+    <ul class="insight-list" style="margin-top: 24px;">
+      <li>
+        <strong>Harga ↔ Terjual (r = {{ r.corr.pairs[0].r }}, p = {{ r.corr.pairs[0].p_value }}):</strong>
+        Korelasi nyaris nol. Konsumen Crocs tidak membeli berdasarkan harga termurah —
+        produk Rp989K seperti Classic Clog justru terlaris, mengalahkan produk yang lebih murah.
+      </li>
+      <li>
+        <strong>Rating ↔ Terjual (r = {{ r.corr.pairs[1].r }}, p = {{ r.corr.pairs[1].p_value }}):</strong>
+        Tidak signifikan. Karena rating semua produk di atas 4.8, variasinya terlalu kecil
+        untuk menghasilkan korelasi yang berarti — sinyal halo effect yang kuat dari brand.
+      </li>
+      <li>
+        <strong>Diskon ↔ Terjual (r = {{ r.corr.pairs[2].r }}, p = {{ r.corr.pairs[2].p_value }}):</strong>
+        Tidak signifikan dan justru bertanda negatif lemah. Diskon yang lebih besar tidak
+        menjamin penjualan lebih tinggi — konsumen Crocs cenderung price-insensitive.
+      </li>
+      <li>
+        <strong>Harga ↔ Rating (r = {{ r.corr.pairs[3].r }}, p = {{ r.corr.pairs[3].p_value }}):</strong>
+        <strong>Satu-satunya korelasi signifikan</strong> — produk premium mendapat rating
+        sedikit lebih rendah. Ekspektasi konsumen lebih tinggi pada produk mahal,
+        sehingga toleransi terhadap kekurangan menurun.
+      </li>
+    </ul>
+  </div>
+
+</div>
+{% endblock %}

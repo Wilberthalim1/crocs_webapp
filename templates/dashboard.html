@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ============ HERO ============ -->
+<section class="page-hero">
+  <div class="eyebrow">Big Data Analytics &middot; Crocs Official Store Shopee</div>
+  <h1>Membongkar pola perilaku konsumen dari <em>30 produk</em> dan <em>30.392 unit terjual</em> melalui <em>K-Means Clustering</em> dan <em>Pearson Correlation</em>.</h1>
+  <p class="lede">
+    Aplikasi web ini meng-embed seluruh pipeline analitik yang dibangun pada Google Colab —
+    Min-Max Normalization, K-Means (K=3), Silhouette Score, dan analisis korelasi Pearson —
+    ke dalam dashboard interaktif. Data hasil web scraping dari Shopee dianalisis untuk
+    mengungkap segmentasi produk, hubungan antar variabel, dan pola perilaku pengguna.
+  </p>
+  <div class="pill-strip" style="margin-top:24px;">
+    <span class="badge t-orange">Web Scraping</span>
+    <span class="badge t-teal">K-Means Clustering</span>
+    <span class="badge t-navy">Pearson Correlation</span>
+    <span class="badge">Min-Max Normalization</span>
+    <span class="badge">Silhouette Score</span>
+    <span class="badge">EDA</span>
+  </div>
+</section>
+
+<div class="container">
+
+  <!-- ============ KPI ROW ============ -->
+  <div class="grid grid-4">
+    <div class="kpi anim">
+      <div class="label">Total Produk</div>
+      <div class="value">{{ r.eda.summary.total_produk }}<span class="unit">SKU</span></div>
+      <div class="desc">aktif di Crocs Official Store</div>
+    </div>
+    <div class="kpi anim">
+      <div class="label">Total Terjual</div>
+      <div class="value">{{ "{:,}".format(r.eda.summary.total_terjual) }}<span class="unit">unit</span></div>
+      <div class="desc">akumulasi seluruh produk</div>
+    </div>
+    <div class="kpi anim">
+      <div class="label">Rata-rata Rating</div>
+      <div class="value">{{ "%.2f"|format(r.eda.summary.rata_rating) }}<span class="unit">/ 5</span></div>
+      <div class="desc">kepuasan konsumen sangat tinggi</div>
+    </div>
+    <div class="kpi anim accent">
+      <div class="label">Rata-rata Harga</div>
+      <div class="value">Rp{{ "{:,.0f}".format(r.eda.summary.rata_harga / 1000) }}<span class="unit">K</span></div>
+      <div class="desc">range Rp389K – Rp1.589K</div>
+    </div>
+  </div>
+
+  <!-- ============ SEGMENT CLUSTERS ============ -->
+  <div class="section-head">
+    <div>
+      <h2>Segmentasi K-Means (K=3)</h2>
+      <p>Hasil clustering produk berdasarkan harga, rating, dan jumlah terjual setelah Min-Max normalization.</p>
+    </div>
+    <span class="badge t-teal">Silhouette Score: {{ r.kmeans.silhouette_K3 }}</span>
+  </div>
+
+  <div class="grid grid-3">
+    {% set clusters = {'Bestseller': {'desc': 'Volume penjualan tertinggi. Produk hero yang menggerakkan revenue.', 'color': 't-orange'},
+                       'Premium':    {'desc': 'Harga rata-rata tertinggi. Segmen profitabilitas dengan volume moderat.', 'color': 't-navy'},
+                       'Regular':    {'desc': 'Mainstream. Volume dan harga moderat, fondasi katalog produk.', 'color': 't-teal'}} %}
+    {% for label, info in clusters.items() %}
+    <div class="card anim">
+      <div class="card-head">
+        <div>
+          <span class="badge {{ info.color }}">Cluster · {{ label }}</span>
+          <div class="card-title" style="margin-top:8px;">{{ r.kmeans.distribusi.get(label, 0) }} produk</div>
+        </div>
+      </div>
+      <p style="color: var(--ink-soft); font-size:14px;">{{ info.desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ============ HASIL VISUALISASI MATPLOTLIB ============ -->
+  <div class="section-head">
+    <div>
+      <h2>Dashboard Overview</h2>
+      <p>Enam visualisasi utama hasil pipeline matplotlib + seaborn: distribusi rating, proporsi kategori, top-10 terlaris, scatter harga vs terjual, rata-rata per kategori, dan elbow method.</p>
+    </div>
+  </div>
+
+  <div class="card anim">
+    <div class="img-wrap">
+      <img src="/static/img/viz_1_dashboard.png" alt="Dashboard 6 charts">
+    </div>
+  </div>
+
+  <!-- ============ INTERACTIVE CHARTS ============ -->
+  <div class="section-head">
+    <div>
+      <h2>Visualisasi Interaktif</h2>
+      <p>Chart.js renders di sisi browser — hover untuk detail per data point.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Distribusi Rating Produk</div>
+        <span class="card-sub">jumlah produk per nilai rating</span>
+      </div>
+      <div class="chart-box"><canvas id="ratingChart"></canvas></div>
+    </div>
+
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Proporsi Kategori Produk</div>
+        <span class="card-sub">5 kategori utama</span>
+      </div>
+      <div class="chart-box"><canvas id="categoryChart"></canvas></div>
+    </div>
+
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Rata-rata Terjual per Kategori</div>
+        <span class="card-sub">unit per kategori</span>
+      </div>
+      <div class="chart-box"><canvas id="avgSoldChart"></canvas></div>
+    </div>
+
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Top-10 Produk Terlaris</div>
+        <span class="card-sub">berdasarkan jumlah terjual</span>
+      </div>
+      <div class="chart-box"><canvas id="topProductsChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ============ INSIGHTS ============ -->
+  <div class="section-head">
+    <div>
+      <h2>Insight Utama</h2>
+      <p>Temuan kunci dari pipeline analitik.</p>
+    </div>
+  </div>
+
+  <div class="card anim">
+    <ul class="insight-list">
+      <li><strong>Brand drives sales, not pricing.</strong> Korelasi harga vs jumlah terjual hanya r = {{ r.corr.pairs[0].r }} (p = {{ r.corr.pairs[0].p_value }}) — variasi harga di rentang Rp389K–Rp1.589K hampir tidak berdampak pada volume penjualan.</li>
+      <li><strong>Classic Clog dominasi penjualan.</strong> Produk terlaris adalah {{ r.eda.summary.produk_tertinggi_terjual }}, dengan top-3 secara konsisten berasal dari lini Classic Clog.</li>
+      <li><strong>Premium ≠ low rating.</strong> Korelasi harga vs rating r = {{ r.corr.pairs[3].r }} (p = {{ r.corr.pairs[3].p_value }}) menunjukkan tren menarik: produk premium justru mendapat rating sedikit lebih rendah secara statistik signifikan.</li>
+      <li><strong>Promosi merata.</strong> Seluruh {{ r.eda.summary.produk_promo }} produk mengikuti program promo Shopee — strategi diskon massal khas e-commerce holiday season.</li>
+      <li><strong>K-Means konvergen baik.</strong> Silhouette score {{ r.kmeans.silhouette_K3 }} pada K=3 menunjukkan separation cluster yang cukup tegas.</li>
+    </ul>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  Chart.defaults.font.family = "'Manrope', sans-serif";
+  Chart.defaults.color = '#2A3D4F';
+  const COLORS = ['#0E7C7B', '#F26A1F', '#1B4965', '#E63946', '#9C6644', '#5C677D'];
+
+  fetch('/api/eda').then(r => r.json()).then(eda => {
+
+    // Rating chart
+    const rd = eda.rating_dist;
+    new Chart(document.getElementById('ratingChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(rd),
+        datasets: [{ data: Object.values(rd), backgroundColor: COLORS[0], borderRadius: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    // Category proportion
+    const cats = eda.per_kategori;
+    new Chart(document.getElementById('categoryChart'), {
+      type: 'doughnut',
+      data: {
+        labels: cats.map(c => c.kategori),
+        datasets: [{ data: cats.map(c => c.jumlah_produk), backgroundColor: COLORS, borderWidth: 2, borderColor: '#FBF7F0' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } } }
+    });
+
+    // Avg sold per category
+    new Chart(document.getElementById('avgSoldChart'), {
+      type: 'bar',
+      data: {
+        labels: cats.map(c => c.kategori),
+        datasets: [{ data: cats.map(c => c.rata_terjual), backgroundColor: COLORS[1], borderRadius: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                 scales: { y: { beginAtZero: true } } }
+    });
+  });
+
+  // Top-10 products
+  fetch('/api/products').then(r => r.json()).then(products => {
+    const sorted = [...products].sort((a, b) => b.terjual - a.terjual).slice(0, 10);
+    new Chart(document.getElementById('topProductsChart'), {
+      type: 'bar',
+      data: {
+        labels: sorted.map(p => p.nama_produk.length > 30 ? p.nama_produk.slice(0, 30) + '…' : p.nama_produk),
+        datasets: [{
+          data: sorted.map(p => p.terjual),
+          backgroundColor: sorted.map(p =>
+            p.cluster_label === 'Bestseller' ? COLORS[1] :
+            p.cluster_label === 'Premium' ? COLORS[2] : COLORS[0]),
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true } }
+      }
+    });
+  });
+</script>
+{% endblock %}

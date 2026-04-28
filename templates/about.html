@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Tentang Project{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <div class="eyebrow">Tentang Project &middot; UAS 2025/2026</div>
+  <h1>Project gabungan <em>Manajemen Big Data</em> dan <em>Analitika Perilaku &amp; Tren</em>.</h1>
+  <p class="lede">
+    Aplikasi web ini adalah perwujudan tahap akhir dari project UAS yang menggabungkan
+    seluruh pipeline analitik yang sebelumnya dijalankan terisolasi di Google Colab.
+    Algoritma yang sama (K-Means, Pearson, Min-Max, Silhouette) kini diakses melalui
+    interface yang interaktif dan dapat diakses publik.
+  </p>
+</section>
+
+<div class="container">
+
+  <!-- Identitas -->
+  <div class="grid grid-2">
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Identitas Penyusun</div>
+      </div>
+      <div class="tbl-wrap" style="border:0;">
+        <table class="tbl">
+          <tbody>
+            <tr><td>Nama</td><td><strong>Wilbert Halim</strong></td></tr>
+            <tr><td>NIM</td><td>03081230042</td></tr>
+            <tr><td>Kelas</td><td>23SI2</td></tr>
+            <tr><td>Program Studi</td><td>Sistem Informasi</td></tr>
+            <tr><td>Fakultas</td><td>Artificial Intelligence and Data Sciences</td></tr>
+            <tr><td>Universitas</td><td>Universitas Pelita Harapan, Medan Campus</td></tr>
+            <tr><td>Mata Kuliah</td><td>Manajemen Data Besar</td></tr>
+            <tr><td>Dosen Pengampu</td><td>Frans Mikael Sinaga, M.Kom.</td></tr>
+            <tr><td>Semester</td><td>Genap 2025/2026</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Lingkup Project</div>
+      </div>
+      <p style="color: var(--ink-soft); font-size: 14px; margin-bottom: 16px;">
+        Project ini menganalisis 30 produk dari Crocs Official Store di Shopee Indonesia
+        yang dikumpulkan via web scraping. Tujuannya adalah mengidentifikasi pola perilaku
+        konsumen, segmen produk, dan hubungan antar variabel (harga, rating, diskon,
+        promo, jumlah terjual).
+      </p>
+      <div class="pill-strip">
+        <span class="badge t-orange">Web Scraping</span>
+        <span class="badge t-teal">K-Means</span>
+        <span class="badge t-navy">Pearson</span>
+        <span class="badge">Min-Max</span>
+        <span class="badge">Silhouette</span>
+        <span class="badge">EDA</span>
+      </div>
+      <hr class="divider">
+      <h4 class="display" style="font-size: 17px; margin-bottom: 8px;">Rumusan Masalah</h4>
+      <ol style="padding-left: 20px; font-size: 13.5px; color: var(--ink-soft); line-height: 1.8;">
+        <li>Bagaimana pola distribusi rating dan hubungan harga, diskon, dan jumlah terjual?</li>
+        <li>Bagaimana segmentasi produk via K-Means berdasarkan harga, rating, dan volume?</li>
+        <li>Sejauh mana pengaruh promosi dan diskon terhadap perilaku pembelian?</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="section-head">
+    <div>
+      <h2>Pipeline Lengkap</h2>
+      <p>6 tahap pipeline manajemen big data dari pengumpulan hingga visualisasi.</p>
+    </div>
+  </div>
+
+  <div class="card anim">
+    <div class="steps">
+      <div class="step">
+        <h4>Pengumpulan Data — Web Scraping</h4>
+        <p>Ekstraksi 30 produk dari halaman Crocs Official Store di shopee.co.id dengan
+           atribut HTML. Disimpan sebagai <span class="mono">shopee.xlsx</span>.</p>
+      </div>
+      <div class="step">
+        <h4>Pembersihan Data</h4>
+        <p>Rename kolom, parsing harga (titik ribuan), parsing terjual ("5RB+" → 5000),
+           ekstraksi kategori dan warna, kalkulasi harga setelah diskon.</p>
+      </div>
+      <div class="step">
+        <h4>Penyimpanan Data</h4>
+        <p>Multi-format: CSV bersih untuk analisis, Excel multi-sheet untuk dokumentasi,
+           statistik deskriptif terpisah.</p>
+      </div>
+      <div class="step">
+        <h4>Pengolahan Data</h4>
+        <p>Min-Max Normalization fitur clustering, Elbow Method, Silhouette Score,
+           K-Means dengan K=3, pelabelan cluster (Bestseller / Premium / Regular).</p>
+      </div>
+      <div class="step">
+        <h4>Analisis Data</h4>
+        <p>Statistik deskriptif, korelasi Pearson 4 variabel, segmentasi popularitas,
+           analisis pengaruh promo, top-N produk.</p>
+      </div>
+      <div class="step">
+        <h4>Visualisasi & Aplikasi Web</h4>
+        <p>Charts dengan matplotlib + seaborn (PNG), plus visualisasi interaktif berbasis
+           Chart.js. Dashboard Flask sebagai presentation layer untuk hasil pipeline.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tools -->
+  <div class="section-head">
+    <div>
+      <h2>Tools & Tech Stack</h2>
+      <p>Library dan tools yang digunakan dalam project.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-3">
+    <div class="card anim">
+      <div class="card-head"><div class="card-title">Backend</div></div>
+      <ul style="list-style: none; font-size: 14px;">
+        <li style="padding: 6px 0;">→ <strong>Python 3.11</strong></li>
+        <li style="padding: 6px 0;">→ <strong>Flask</strong> — web framework</li>
+        <li style="padding: 6px 0;">→ <strong>pandas</strong> — DataFrame manipulation</li>
+        <li style="padding: 6px 0;">→ <strong>NumPy</strong> — komputasi numerik</li>
+        <li style="padding: 6px 0;">→ <strong>OpenPyXL</strong> — read/write Excel</li>
+      </ul>
+    </div>
+    <div class="card anim">
+      <div class="card-head"><div class="card-title">Analytics</div></div>
+      <ul style="list-style: none; font-size: 14px;">
+        <li style="padding: 6px 0;">→ <strong>scikit-learn</strong> — K-Means, MinMaxScaler, Silhouette</li>
+        <li style="padding: 6px 0;">→ <strong>SciPy</strong> — Pearson correlation</li>
+        <li style="padding: 6px 0;">→ <strong>matplotlib</strong> — static charts</li>
+        <li style="padding: 6px 0;">→ <strong>seaborn</strong> — heatmap</li>
+      </ul>
+    </div>
+    <div class="card anim">
+      <div class="card-head"><div class="card-title">Frontend</div></div>
+      <ul style="list-style: none; font-size: 14px;">
+        <li style="padding: 6px 0;">→ <strong>Jinja2</strong> templating</li>
+        <li style="padding: 6px 0;">→ <strong>Chart.js 4</strong> — interaktif</li>
+        <li style="padding: 6px 0;">→ <strong>Vanilla JS + CSS</strong></li>
+        <li style="padding: 6px 0;">→ <strong>Fraunces · Manrope · JetBrains Mono</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Daftar Pustaka -->
+  <div class="section-head">
+    <div>
+      <h2>Daftar Pustaka</h2>
+      <p>Referensi ilmiah yang mendukung metode dan tools yang digunakan.</p>
+    </div>
+  </div>
+
+  <div class="card anim">
+    <ol style="padding-left: 24px; font-size: 13.5px; line-height: 1.85; color: var(--ink-soft);">
+      <li style="margin-bottom: 10px;">Ardi, R. B., Ely Nastiti, F., &amp; Sumarlinda, S. (2023). Algoritma K-Means Clustering untuk Segmentasi Pelanggan (Studi Kasus: Fashion Viral Solo). <em>INFOTECH Journal</em>, 9(1), 124–131. https://doi.org/10.31949/infotech.v9i1.5214</li>
+      <li style="margin-bottom: 10px;">Chrisinta, D., &amp; Simarmata, J. E. (2024). Eksplorasi Teknik Web Scraping pada Data Mining: Pendekatan Pencarian Data Berbasis Python. <em>Faktor Exacta</em>, 17(1).</li>
+      <li style="margin-bottom: 10px;">Dermawan, H. D., Kurniawan, R., &amp; Wijaya, Y. A. (2024). Analisis Data Penjualan Menggunakan Algoritma K-Means Clustering Pada Toko Daun Indah di Shopee. <em>CESS</em>, 9(1), 175–191. https://doi.org/10.24114/cess.v9i1.55093</li>
+      <li style="margin-bottom: 10px;">Dewi, S., Marpaung, N., &amp; Siregar, O. (2025). Pengaruh Online Customer Review dan Rating Terhadap Minat Beli Produk pada Layanan Aplikasi Shopee. <em>Jurnal Ilmiah Wahana Pendidikan</em>, 11(9.C), 178–192.</li>
+      <li style="margin-bottom: 10px;">Geni, S. P. L., dkk. (2025). Penerapan K-Means Clustering untuk Segmentasi Konsumen E-Commerce. <em>JUKI: Jurnal Komputer dan Informatika</em>, 7(1), 89–99.</li>
+      <li style="margin-bottom: 10px;">Hersa Safitri, dkk. (2025). Analisis Big Data E-Commerce dengan Pendekatan Clustering.</li>
+      <li style="margin-bottom: 10px;">Kristanti, B. T., Junaidi, A., &amp; Mandyartha, E. P. (2024). Implementasi K-Means Clustering dalam Segmentasi Pelanggan Berdasarkan Usia, Pendapatan, dan Model RFM. <em>Jurnal Informatika dan Teknik Elektro Terapan</em>, 12(3).</li>
+      <li style="margin-bottom: 10px;">Pedregosa, F., dkk. (2011). Scikit-learn: Machine Learning in Python. <em>JMLR</em>, 12, 2825–2830.</li>
+      <li style="margin-bottom: 10px;">Rizquina, A., &amp; Ratnasari, C. (2023). Implementasi Web Scraping untuk Pengambilan Data Pada Website E-Commerce. <em>Jurnal Teknologi dan Sistem Informasi Bisnis</em>, 5(4), 377–383.</li>
+      <li style="margin-bottom: 10px;">Sabrina, A. E., &amp; Yasin, M. (2025). E-Commerce Consumer Data Clustering Using K-Means Algorithm and Kaggle Dataset. <em>Journal of Computer Science and Informatics Engineering</em>, 4(2), 96–109.</li>
+      <li style="margin-bottom: 10px;">Tito, dkk. (2024). Pengaruh Online Customer Review dan Online Customer Rating Terhadap Keputusan Pembelian pada Marketplace Shopee. <em>Warta Dharmawangsa</em>.</li>
+      <li style="margin-bottom: 10px;">Yahya, A., &amp; Kurniawan, R. (2025). Implementasi Algoritma K-Means untuk Pengelompokan Data Penjualan Berdasarkan Pola Penjualan. <em>MALCOM</em>, 5(1), 350–358.</li>
+    </ol>
+  </div>
+
+</div>
+{% endblock %}

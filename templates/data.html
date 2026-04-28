@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Data{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <div class="eyebrow">Tahap 1 — 3 &middot; Pengumpulan, Pembersihan, Penyimpanan</div>
+  <h1>Dari <em>HTML scraping</em> ke <em>dataset bersih</em> siap analisis.</h1>
+  <p class="lede">
+    Data mentah dikumpulkan via web scraping dari halaman Crocs Official Store di Shopee
+    Indonesia. Kolom HTML yang asli (kelas CSS yang tidak deskriptif) di-rename, format
+    harga "Rp989.000" dikonversi menjadi numerik, "5RB+ terjual" diparse menjadi 5000,
+    dan kolom turunan seperti kategori, warna, dan harga setelah diskon di-ekstrak.
+  </p>
+</section>
+
+<div class="container">
+
+  <!-- ============ PIPELINE STEPS ============ -->
+  <div class="grid grid-2">
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Pipeline Cleaning</div>
+        <span class="badge t-teal">{{ r.rows_clean }} rows</span>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h4>Rename kolom HTML → semantik</h4>
+          <p>Kolom hasil scrape (<span class="mono">contents href</span>, <span class="mono">font-medium 2</span>, dll) di-rename menjadi nama yang deskriptif: nama_produk, harga, rating, terjual.</p>
+        </div>
+        <div class="step">
+          <h4>Parsing harga</h4>
+          <p>"Rp989.000" → hapus titik ribuan → konversi numerik → 989000.</p>
+        </div>
+        <div class="step">
+          <h4>Parsing terjual</h4>
+          <p>"5RB+ terjual" → ekstrak 5 → kalikan 1000 → 5000. "870 terjual" → 870.</p>
+        </div>
+        <div class="step">
+          <h4>Ekstraksi fitur turunan</h4>
+          <p>Kategori (Kids, Women, Unisex, dll), warna (split " - "), harga setelah diskon, dan flag promo biner.</p>
+        </div>
+        <div class="step">
+          <h4>Penyimpanan multi-format</h4>
+          <p>CSV (<span class="mono">shopee_crocs_clean.csv</span>) untuk analisis, Excel multi-sheet untuk dokumentasi, dan statistik deskriptif terpisah.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Schema Final</div>
+        <span class="card-sub">{{ r.rows_clean }} baris × 11 kolom</span>
+      </div>
+      <div class="tbl-wrap" style="margin-top: 8px;">
+        <table class="tbl">
+          <thead>
+            <tr><th>Kolom</th><th>Tipe</th><th>Contoh</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="mono">nama_produk</span></td><td>string</td><td>Crocs Unisex Classic Clog - White</td></tr>
+            <tr><td><span class="mono">kategori</span></td><td>string</td><td>Unisex / Women / Kids / Men Slide / Accessories</td></tr>
+            <tr><td><span class="mono">warna</span></td><td>string</td><td>White, Black, Bone, …</td></tr>
+            <tr><td><span class="mono">harga</span></td><td class="num">int</td><td class="num">989000</td></tr>
+            <tr><td><span class="mono">diskon_pct</span></td><td class="num">float</td><td class="num">22.0</td></tr>
+            <tr><td><span class="mono">harga_diskon</span></td><td class="num">float</td><td class="num">771420.0</td></tr>
+            <tr><td><span class="mono">ada_promo</span></td><td class="num">int</td><td class="num">0 / 1</td></tr>
+            <tr><td><span class="mono">rating</span></td><td class="num">float</td><td class="num">4.9</td></tr>
+            <tr><td><span class="mono">terjual</span></td><td class="num">int</td><td class="num">5000</td></tr>
+            <tr><td><span class="mono">cluster</span></td><td class="num">int</td><td class="num">0 / 1 / 2</td></tr>
+            <tr><td><span class="mono">cluster_label</span></td><td>string</td><td>Bestseller / Premium / Regular</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="/download/shopee_crocs_clean.csv" class="badge t-orange" style="cursor:pointer;">⬇ shopee_crocs_clean.csv</a>
+        <a href="/download/shopee_crocs_processed.xlsx" class="badge t-orange" style="cursor:pointer;">⬇ shopee_crocs_processed.xlsx</a>
+        <a href="/download/statistik_deskriptif.csv" class="badge t-orange" style="cursor:pointer;">⬇ statistik_deskriptif.csv</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TABLE DATA ============ -->
+  <div class="section-head">
+    <div>
+      <h2>Dataset Bersih — {{ r.rows_clean }} Produk</h2>
+      <p>Hasil setelah seluruh tahap cleaning. Klik header kolom untuk sorting.</p>
+    </div>
+    <div>
+      <input id="searchInput" placeholder="Cari produk…" style="padding:8px 14px; border:1px solid var(--line); background:var(--paper); border-radius:999px; font-family:inherit; font-size:13px; width:220px;">
+    </div>
+  </div>
+
+  <div class="tbl-wrap anim">
+    <table class="tbl" id="dataTable">
+      <thead>
+        <tr>
+          <th>Nama Produk</th>
+          <th>Kategori</th>
+          <th class="num">Harga</th>
+          <th class="num">Diskon%</th>
+          <th class="num">Rating</th>
+          <th class="num">Terjual</th>
+          <th>Segmen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in r.products %}
+        <tr>
+          <td>{{ p.nama_produk[:55] }}{{ '…' if p.nama_produk|length > 55 else '' }}</td>
+          <td><span class="badge">{{ p.kategori }}</span></td>
+          <td class="num">Rp{{ "{:,}".format(p.harga) }}</td>
+          <td class="num">{{ "%.0f"|format(p.diskon_pct) }}%</td>
+          <td class="num">{{ p.rating }}</td>
+          <td class="num">{{ "{:,}".format(p.terjual) }}</td>
+          <td>
+            {% if p.cluster_label == 'Bestseller' %}
+              <span class="badge t-orange">{{ p.cluster_label }}</span>
+            {% elif p.cluster_label == 'Premium' %}
+              <span class="badge t-navy">{{ p.cluster_label }}</span>
+            {% else %}
+              <span class="badge t-teal">{{ p.cluster_label }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Simple search
+  const input = document.getElementById('searchInput');
+  const rows  = document.querySelectorAll('#dataTable tbody tr');
+  input.addEventListener('input', () => {
+    const q = input.value.toLowerCase();
+    rows.forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+</script>
+{% endblock %}

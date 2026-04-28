@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Crocs Analytics{% endblock %} · Manajemen Big Data</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+  :root {
+    --cream:    #F5EFE6;
+    --cream-2:  #EDE5D8;
+    --ink:      #0B1B2B;
+    --ink-soft: #2A3D4F;
+    --teal:     #0E7C7B;
+    --teal-dk:  #0A5C5B;
+    --orange:   #F26A1F;
+    --navy:     #1B4965;
+    --warn:     #E63946;
+    --muted:    #8A8378;
+    --line:     #D9CFC0;
+    --paper:    #FBF7F0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.55;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display { font-family: 'Fraunces', serif; font-weight: 500; letter-spacing: -0.02em; }
+  .mono    { font-family: 'JetBrains Mono', monospace; }
+
+  a { color: var(--teal); text-decoration: none; }
+  a:hover { color: var(--orange); }
+
+  /* ---------- TOP BAR ---------- */
+  .topbar {
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    padding: 18px 0;
+    position: sticky;
+    top: 0; z-index: 50;
+    backdrop-filter: blur(10px);
+  }
+  .topbar-inner {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-mark {
+    width: 38px; height: 38px;
+    background: var(--ink);
+    color: var(--cream);
+    display: grid;
+    place-items: center;
+    border-radius: 4px;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 18px;
+    transform: rotate(-3deg);
+  }
+  .brand-text { line-height: 1.2; }
+  .brand-text .top {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+  }
+  .brand-text .sub {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav a {
+    color: var(--ink-soft);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.18s ease;
+  }
+  .nav a:hover {
+    background: var(--cream-2);
+    color: var(--ink);
+  }
+  .nav a.active {
+    background: var(--ink);
+    color: var(--cream);
+  }
+
+  /* ---------- HERO ---------- */
+  .page-hero {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 56px 32px 32px;
+    border-bottom: 1px solid var(--line);
+  }
+  .page-hero .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+  .page-hero .eyebrow::before {
+    content: ""; width: 24px; height: 1px; background: var(--muted);
+  }
+  .page-hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    max-width: 900px;
+  }
+  .page-hero h1 em {
+    font-style: italic;
+    color: var(--orange);
+    font-weight: 500;
+  }
+  .page-hero .lede {
+    margin-top: 18px;
+    max-width: 720px;
+    font-size: 17px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  /* ---------- LAYOUT ---------- */
+  .container {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 40px 32px 80px;
+  }
+  .grid { display: grid; gap: 24px; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .nav { display: none; }
+  }
+
+  /* ---------- CARDS ---------- */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 24px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card:hover {
+    box-shadow: 0 8px 30px -12px rgba(11, 27, 43, 0.12);
+  }
+  .card-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 16px;
+  }
+  .card-title {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .card-sub {
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    border: 1px solid var(--line);
+    background: var(--cream-2);
+    color: var(--ink-soft);
+  }
+  .badge.t-orange  { background: #FFE7D6; color: #B14406; border-color: #F2C9A6; }
+  .badge.t-teal    { background: #D6ECEC; color: var(--teal-dk); border-color: #A6CFCE; }
+  .badge.t-navy    { background: #DCE6EF; color: var(--navy); border-color: #B4C7D9; }
+  .badge.t-warn    { background: #FFE0E2; color: #B5252F; border-color: #F2B6BB; }
+
+  /* ---------- KPI ---------- */
+  .kpi {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::after {
+    content: ""; position: absolute; right: -20px; bottom: -20px;
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: var(--cream-2);
+    opacity: 0.7; z-index: 0;
+  }
+  .kpi > * { position: relative; z-index: 1; }
+  .kpi .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .kpi .value {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .kpi .unit {
+    font-size: 14px;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .kpi .desc {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .kpi.accent { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .kpi.accent .label { color: rgba(245, 239, 230, 0.7); }
+  .kpi.accent::after { background: rgba(242, 106, 31, 0.15); }
+  .kpi.accent .desc { color: rgba(245, 239, 230, 0.75); }
+
+  /* ---------- TABLE ---------- */
+  .tbl-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--paper);
+  }
+  table.tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  table.tbl th, table.tbl td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  table.tbl th {
+    background: var(--cream-2);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+  }
+  table.tbl tr:last-child td { border-bottom: 0; }
+  table.tbl tr:hover td { background: var(--cream); }
+  table.tbl td.num, table.tbl th.num { text-align: right; font-family: 'JetBrains Mono', monospace; }
+
+  /* ---------- CHART CONTAINER ---------- */
+  .chart-box {
+    position: relative;
+    height: 320px;
+  }
+  .chart-box.tall { height: 420px; }
+
+  /* ---------- IMG WRAP ---------- */
+  .img-wrap {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px;
+    overflow: hidden;
+  }
+  .img-wrap img { width: 100%; display: block; }
+
+  /* ---------- METHOD STEPS ---------- */
+  .steps { counter-reset: step; }
+  .step {
+    counter-increment: step;
+    padding: 18px 0 18px 60px;
+    border-bottom: 1px dashed var(--line);
+    position: relative;
+  }
+  .step::before {
+    content: counter(step, decimal-leading-zero);
+    position: absolute; left: 0; top: 18px;
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    color: var(--orange);
+    font-weight: 500;
+    line-height: 1;
+  }
+  .step:last-child { border-bottom: 0; }
+  .step h4 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .step p { color: var(--ink-soft); font-size: 14px; }
+
+  /* ---------- SECTION HEADERS ---------- */
+  .section-head {
+    margin: 40px 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .section-head h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+  }
+  .section-head p { color: var(--muted); font-size: 14px; max-width: 520px; }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 48px 32px 32px;
+    margin-top: 80px;
+  }
+  footer .ftr-inner {
+    max-width: 1300px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 32px;
+  }
+  @media (max-width: 700px) {
+    footer .ftr-inner { grid-template-columns: 1fr; }
+  }
+  footer h4 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    margin-bottom: 12px;
+    font-size: 18px;
+  }
+  footer p, footer li { color: rgba(245, 239, 230, 0.75); font-size: 13px; line-height: 1.7; }
+  footer ul { list-style: none; }
+  footer a { color: var(--cream); border-bottom: 1px dotted rgba(245,239,230,0.4); }
+  .ftr-bottom {
+    max-width: 1300px;
+    margin: 32px auto 0;
+    padding-top: 20px;
+    border-top: 1px solid rgba(245, 239, 230, 0.15);
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: rgba(245, 239, 230, 0.5);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* ---------- ANIMATIONS ---------- */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .anim { animation: fadeUp 0.6s ease both; }
+  .anim:nth-child(2) { animation-delay: 0.06s; }
+  .anim:nth-child(3) { animation-delay: 0.12s; }
+  .anim:nth-child(4) { animation-delay: 0.18s; }
+
+  /* misc */
+  .pill-strip {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  hr.divider {
+    border: 0; height: 1px; background: var(--line); margin: 32px 0;
+  }
+  .insight-list li {
+    list-style: none;
+    padding: 12px 0 12px 26px;
+    border-bottom: 1px dashed var(--line);
+    position: relative;
+  }
+  .insight-list li::before {
+    content: "→";
+    position: absolute; left: 0;
+    color: var(--orange);
+    font-weight: bold;
+  }
+  .insight-list li:last-child { border-bottom: 0; }
+
+  .quote-block {
+    border-left: 3px solid var(--orange);
+    padding: 8px 0 8px 20px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ink-soft);
+  }
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="/" class="brand">
+      <div class="brand-mark">C</div>
+      <div class="brand-text">
+        <div class="top">Crocs Analytics</div>
+        <div class="sub">Big Data &middot; Shopee Indonesia</div>
+      </div>
+    </a>
+    <nav class="nav">
+      <a href="/"            class="{{ 'active' if active=='dashboard' }}">Dashboard</a>
+      <a href="/data"        class="{{ 'active' if active=='data' }}">Data</a>
+      <a href="/eda"         class="{{ 'active' if active=='eda' }}">EDA</a>
+      <a href="/clustering"  class="{{ 'active' if active=='clustering' }}">Clustering</a>
+      <a href="/correlation" class="{{ 'active' if active=='correlation' }}">Korelasi</a>
+      <a href="/about"       class="{{ 'active' if active=='about' }}">Tentang</a>
+    </nav>
+  </div>
+</header>
+
+{% block content %}{% endblock %}
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="ftr-inner">
+    <div>
+      <h4>Crocs Analytics Dashboard</h4>
+      <p>Aplikasi web untuk analitika perilaku pengguna dan pola tren rating
+         e-commerce Crocs Official Store di Shopee Indonesia. Meng-integrasikan
+         seluruh algoritma yang dibangun pada Google Colab — K-Means Clustering,
+         Korelasi Pearson, Min-Max Normalization, Silhouette Score, dan EDA —
+         ke dalam dashboard interaktif berbasis Flask.</p>
+    </div>
+    <div>
+      <h4>Project</h4>
+      <ul>
+        <li>Mata Kuliah: Manajemen Data Besar</li>
+        <li>Penyusun: Wilbert Halim</li>
+        <li>NIM: 03081230042</li>
+        <li>Kelas: 23SI2</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Tech Stack</h4>
+      <ul>
+        <li>Flask · Python</li>
+        <li>scikit-learn · SciPy</li>
+        <li>pandas · matplotlib · seaborn</li>
+        <li>Chart.js · HTML/CSS</li>
+      </ul>
+    </div>
+  </div>
+  <div class="ftr-bottom">
+    <span>© 2026 — UAS Manajemen Data Besar, UPH Medan</span>
+    <span class="mono">v1.0 · {{ r.rows_clean }} produk dianalisis</span>
+  </div>
+</footer>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

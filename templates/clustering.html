@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}K-Means Clustering{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <div class="eyebrow">Tahap 5 &middot; K-Means Clustering</div>
+  <h1>Segmentasi produk via <em>K-Means</em> dengan Min-Max Normalization dan validasi <em>Silhouette Score</em>.</h1>
+  <p class="lede">
+    Tiga fitur — harga, rating, dan jumlah terjual — di-normalisasi ke rentang [0, 1]
+    sebelum dimasukkan ke algoritma K-Means. Jumlah cluster optimal ditentukan dengan
+    Elbow Method dan Silhouette Score: K = 3 dipilih karena memberikan separation yang
+    paling baik.
+  </p>
+</section>
+
+<div class="container">
+
+  <!-- KPI Strip -->
+  <div class="grid grid-4">
+    <div class="kpi anim">
+      <div class="label">K Optimal</div>
+      <div class="value">3<span class="unit">cluster</span></div>
+      <div class="desc">via Elbow + Silhouette</div>
+    </div>
+    <div class="kpi anim">
+      <div class="label">Silhouette Score</div>
+      <div class="value">{{ r.kmeans.silhouette_K3 }}<span class="unit">/1.0</span></div>
+      <div class="desc">separation cluster cukup tegas</div>
+    </div>
+    <div class="kpi anim">
+      <div class="label">Algoritma</div>
+      <div class="value display" style="font-size:24px;">K-Means++</div>
+      <div class="desc">random_state=42, n_init=10</div>
+    </div>
+    <div class="kpi accent anim">
+      <div class="label">Fitur Clustering</div>
+      <div class="value display" style="font-size:24px;">3 fitur</div>
+      <div class="desc">harga · rating · terjual</div>
+    </div>
+  </div>
+
+  <!-- Elbow Method -->
+  <div class="section-head">
+    <div>
+      <h2>Elbow Method</h2>
+      <p>Inertia (within-cluster sum of squares) dan Silhouette Score untuk K = 2 sampai 7.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Inertia & Silhouette per K</div>
+        <span class="card-sub">titik siku ada di K=3</span>
+      </div>
+      <div class="chart-box tall"><canvas id="elbowChart"></canvas></div>
+    </div>
+
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Tabel Evaluasi K</div>
+        <span class="card-sub">2 ≤ K ≤ 7</span>
+      </div>
+      <div class="tbl-wrap" style="border:0;">
+        <table class="tbl">
+          <thead>
+            <tr><th class="num">K</th><th class="num">Inertia</th><th class="num">Silhouette</th><th>Catatan</th></tr>
+          </thead>
+          <tbody>
+            {% for i in range(r.kmeans.K_range|length) %}
+            <tr {% if r.kmeans.K_range[i] == 3 %}style="background: #FFE7D6;"{% endif %}>
+              <td class="num"><strong>{{ r.kmeans.K_range[i] }}</strong></td>
+              <td class="num">{{ "%.4f"|format(r.kmeans.inertia[i]) }}</td>
+              <td class="num">{{ "%.4f"|format(r.kmeans.silhouette[i]) }}</td>
+              <td>{{ '✓ Optimal' if r.kmeans.K_range[i] == 3 else '' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cluster Stats -->
+  <div class="section-head">
+    <div>
+      <h2>Karakteristik Cluster</h2>
+      <p>Rata-rata fitur untuk masing-masing dari 3 cluster yang terbentuk.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-3">
+    {% for stat in r.kmeans.cluster_stats %}
+    {% set label_map = {0: 'Cluster 0', 1: 'Cluster 1', 2: 'Cluster 2'} %}
+    <div class="card anim">
+      <div class="card-head">
+        <div>
+          <div class="card-sub mono">cluster_id = {{ stat.cluster }}</div>
+          <div class="card-title">Pusat Cluster {{ stat.cluster }}</div>
+        </div>
+      </div>
+      <table class="tbl" style="border:0;">
+        <tbody>
+          <tr>
+            <td>Rata Harga</td>
+            <td class="num"><strong>Rp{{ "{:,.0f}".format(stat.harga) }}</strong></td>
+          </tr>
+          <tr>
+            <td>Rata Rating</td>
+            <td class="num"><strong>{{ "%.2f"|format(stat.rating) }}</strong></td>
+          </tr>
+          <tr>
+            <td>Rata Terjual</td>
+            <td class="num"><strong>{{ "{:,.0f}".format(stat.terjual) }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Visualization PNG -->
+  <div class="section-head">
+    <div>
+      <h2>Visualisasi Clustering & Korelasi</h2>
+      <p>Scatter K-Means, heatmap korelasi Pearson, dan boxplot rating per segmen.</p>
+    </div>
+  </div>
+
+  <div class="card anim">
+    <div class="img-wrap">
+      <img src="/static/img/viz_2_clustering.png" alt="K-Means visualization">
+    </div>
+  </div>
+
+  <!-- Interactive scatter -->
+  <div class="section-head">
+    <div>
+      <h2>Scatter Interaktif: Harga vs Terjual</h2>
+      <p>Hover untuk melihat nama produk dan segmen.</p>
+    </div>
+  </div>
+
+  <div class="card anim">
+    <div class="card-head">
+      <div class="card-title">Klustering 30 Produk</div>
+      <div class="pill-strip">
+        <span class="badge t-orange">Bestseller</span>
+        <span class="badge t-navy">Premium</span>
+        <span class="badge t-teal">Regular</span>
+      </div>
+    </div>
+    <div class="chart-box tall"><canvas id="scatterChart"></canvas></div>
+  </div>
+
+  <!-- Method Explanation -->
+  <div class="section-head">
+    <div>
+      <h2>Bagaimana Algoritma Bekerja</h2>
+      <p>Pipeline lengkap K-Means yang dijalankan oleh aplikasi.</p>
+    </div>
+  </div>
+
+  <div class="card anim">
+    <div class="steps">
+      <div class="step">
+        <h4>Min-Max Normalization</h4>
+        <p>Setiap fitur (harga, rating, terjual) di-skala ke [0, 1] dengan rumus
+           <span class="mono">x' = (x − x_min) / (x_max − x_min)</span> agar tidak ada
+           variabel yang mendominasi perhitungan jarak Euclidean.</p>
+      </div>
+      <div class="step">
+        <h4>Elbow Method</h4>
+        <p>Untuk K = 2 sampai 7, hitung total inertia (within-cluster sum of squares).
+           Titik di mana penurunan inertia mulai melandai disebut "elbow" — di sini K = 3.</p>
+      </div>
+      <div class="step">
+        <h4>Silhouette Score Validation</h4>
+        <p>Silhouette Score mengukur seberapa mirip suatu data dengan cluster-nya
+           sendiri (cohesion) dibandingkan cluster terdekat (separation). Skor mendekati
+           1 berarti pemisahan yang baik. Pada K=3, skor = {{ r.kmeans.silhouette_K3 }}.</p>
+      </div>
+      <div class="step">
+        <h4>K-Means Clustering (K = 3)</h4>
+        <p>Inisialisasi 3 centroid via K-Means++, iterasi: assign tiap titik ke centroid
+           terdekat → update centroid → ulangi sampai konvergen. <span class="mono">random_state=42</span> untuk reproduksibilitas.</p>
+      </div>
+      <div class="step">
+        <h4>Pelabelan Bisnis</h4>
+        <p>Cluster dengan rata-rata terjual tertinggi → <strong>Bestseller</strong>.
+           Cluster dengan rata-rata harga tertinggi → <strong>Premium</strong>.
+           Cluster lainnya → <strong>Regular</strong>.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  Chart.defaults.font.family = "'Manrope', sans-serif";
+  Chart.defaults.color = '#2A3D4F';
+
+  fetch('/api/kmeans').then(r => r.json()).then(km => {
+    new Chart(document.getElementById('elbowChart'), {
+      type: 'line',
+      data: {
+        labels: km.K_range,
+        datasets: [
+          {
+            label: 'Inertia', data: km.inertia,
+            borderColor: '#1B4965', backgroundColor: '#1B496515',
+            yAxisID: 'y', tension: 0.3, fill: true, pointRadius: 6, pointHoverRadius: 8
+          },
+          {
+            label: 'Silhouette Score', data: km.silhouette,
+            borderColor: '#F26A1F', backgroundColor: '#F26A1F15',
+            yAxisID: 'y1', tension: 0.3, fill: true, pointRadius: 6, pointHoverRadius: 8
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          x: { title: { display: true, text: 'K (Jumlah Cluster)' } },
+          y: { type: 'linear', position: 'left', title: { display: true, text: 'Inertia' } },
+          y1: { type: 'linear', position: 'right', title: { display: true, text: 'Silhouette Score' }, grid: { drawOnChartArea: false } }
+        }
+      }
+    });
+  });
+
+  fetch('/api/products').then(r => r.json()).then(products => {
+    const colorMap = { 'Bestseller': '#F26A1F', 'Premium': '#1B4965', 'Regular': '#0E7C7B' };
+    const datasets = ['Bestseller', 'Premium', 'Regular'].map(label => ({
+      label, backgroundColor: colorMap[label], borderColor: '#fff', borderWidth: 1,
+      pointRadius: 8, pointHoverRadius: 12,
+      data: products.filter(p => p.cluster_label === label).map(p => ({
+        x: p.harga, y: p.terjual, name: p.nama_produk, rating: p.rating
+      }))
+    }));
+
+    new Chart(document.getElementById('scatterChart'), {
+      type: 'scatter',
+      data: { datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const d = ctx.raw;
+                return [
+                  d.name.slice(0, 50),
+                  `Harga: Rp${d.x.toLocaleString('id-ID')}`,
+                  `Terjual: ${d.y.toLocaleString('id-ID')}`,
+                  `Rating: ${d.rating}`,
+                  `Segmen: ${ctx.dataset.label}`
+                ];
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Harga (Rp)' },
+            ticks: { callback: v => 'Rp' + (v / 1e6).toFixed(1) + 'Jt' }
+          },
+          y: { title: { display: true, text: 'Jumlah Terjual' } }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

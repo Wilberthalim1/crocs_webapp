@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}EDA{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <div class="eyebrow">Tahap 4 &middot; Exploratory Data Analysis</div>
+  <h1>Eksplorasi distribusi, segmentasi harga, dan pola <em>popularitas</em>.</h1>
+  <p class="lede">
+    Sebelum masuk ke algoritma clustering, EDA dilakukan untuk memahami karakteristik
+    sebaran tiap variabel — apakah ada outlier, bagaimana distribusi rating, dan segmen
+    harga mana yang paling diminati pasar.
+  </p>
+</section>
+
+<div class="container">
+
+  <!-- Statistik Deskriptif -->
+  <div class="section-head">
+    <div>
+      <h2>Statistik Deskriptif</h2>
+      <p>Summary numerik per variabel utama (harga, diskon, rating, terjual).</p>
+    </div>
+  </div>
+
+  <div class="tbl-wrap anim">
+    <table class="tbl">
+      <thead>
+        <tr><th>Statistik</th><th class="num">Harga (Rp)</th><th class="num">Diskon (%)</th><th class="num">Rating</th><th class="num">Terjual</th></tr>
+      </thead>
+      <tbody>
+        {% for stat in ['count','mean','std','min','25%','50%','75%','max'] %}
+        <tr>
+          <td><strong>{{ stat }}</strong></td>
+          <td class="num">{{ "{:,.0f}".format(r.eda.deskriptif.harga[stat]) }}</td>
+          <td class="num">{{ "%.2f"|format(r.eda.deskriptif.diskon_pct[stat]) }}</td>
+          <td class="num">{{ "%.3f"|format(r.eda.deskriptif.rating[stat]) }}</td>
+          <td class="num">{{ "{:,.0f}".format(r.eda.deskriptif.terjual[stat]) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Distribusi -->
+  <div class="section-head">
+    <div>
+      <h2>Distribusi Variabel</h2>
+      <p>Histogram dan boxplot untuk identifikasi sebaran dan outlier.</p>
+    </div>
+  </div>
+
+  <div class="card anim">
+    <div class="img-wrap">
+      <img src="/static/img/viz_0_eda.png" alt="EDA distribution">
+    </div>
+  </div>
+
+  <!-- Per Kategori -->
+  <div class="section-head">
+    <div>
+      <h2>Analisis per Kategori</h2>
+      <p>Komparasi rata-rata harga, rating, dan total terjual untuk setiap kategori produk.</p>
+    </div>
+  </div>
+
+  <div class="tbl-wrap anim">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Kategori</th>
+          <th class="num">Jumlah Produk</th>
+          <th class="num">Rata Harga</th>
+          <th class="num">Rata Rating</th>
+          <th class="num">Total Terjual</th>
+          <th class="num">Rata Terjual</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for k in r.eda.per_kategori %}
+        <tr>
+          <td><span class="badge">{{ k.kategori }}</span></td>
+          <td class="num">{{ k.jumlah_produk }}</td>
+          <td class="num">Rp{{ "{:,.0f}".format(k.rata_harga) }}</td>
+          <td class="num">{{ "%.2f"|format(k.rata_rating) }}</td>
+          <td class="num">{{ "{:,.0f}".format(k.total_terjual) }}</td>
+          <td class="num">{{ "{:,.0f}".format(k.rata_terjual) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Segmentasi Harga & Popularitas -->
+  <div class="grid grid-2" style="margin-top:32px;">
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Segmentasi Harga</div>
+        <span class="card-sub">4 segmen berdasarkan range harga</span>
+      </div>
+      <div class="chart-box"><canvas id="priceSegChart"></canvas></div>
+    </div>
+
+    <div class="card anim">
+      <div class="card-head">
+        <div class="card-title">Segmentasi Popularitas</div>
+        <span class="card-sub">jumlah produk per kelompok terjual</span>
+      </div>
+      <div class="chart-box"><canvas id="popChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Visualisasi Popularitas + Promo -->
+  <div class="section-head">
+    <div>
+      <h2>Popularitas & Pengaruh Promo</h2>
+      <p>Visualisasi gabungan: segmentasi popularitas, perbandingan promo, dan scatter rating-terjual.</p>
+    </div>
+  </div>
+
+  <div class="card anim">
+    <div class="img-wrap">
+      <img src="/static/img/viz_3_popularitas.png" alt="Popularitas dan promo">
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  Chart.defaults.font.family = "'Manrope', sans-serif";
+  Chart.defaults.color = '#2A3D4F';
+  const COLORS = ['#0E7C7B', '#F26A1F', '#1B4965', '#E63946', '#9C6644'];
+
+  fetch('/api/eda').then(r => r.json()).then(eda => {
+    // Segmen harga
+    const seg = eda.segmen_harga;
+    new Chart(document.getElementById('priceSegChart'), {
+      type: 'bar',
+      data: {
+        labels: seg.map(s => s.segmen_harga),
+        datasets: [
+          { label: 'Jumlah Produk', data: seg.map(s => s.jumlah_produk), backgroundColor: COLORS[0], borderRadius: 4 },
+          { label: 'Rata Terjual',  data: seg.map(s => s.rata_terjual),  backgroundColor: COLORS[1], borderRadius: 4, yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          y:  { type: 'linear', position: 'left', title: { display: true, text: 'Jumlah Produk' } },
+          y1: { type: 'linear', position: 'right', title: { display: true, text: 'Rata Terjual' }, grid: { drawOnChartArea: false } }
+        }
+      }
+    });
+
+    // Popularitas
+    const pop = eda.popularitas;
+    new Chart(document.getElementById('popChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(pop),
+        datasets: [{ data: Object.values(pop), backgroundColor: COLORS, borderRadius: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+  });
+</script>
+{% endblock %}
